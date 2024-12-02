@@ -1,0 +1,137 @@
+version: '3'
+
+vars:
+  FILE_PATH: '{{.FILE_PATH}}'
+  CLIENT_ROOT_DIR_PATH: { sh: "realpath './client'" }
+  SERVER_ROOT_DIR_PATH: { sh: "realpath './server'" }
+
+  WRK_CLIENT_FILE_PATH:
+    sh:
+      FILE_PATH='{{.FILE_PATH}}';
+      CLIENT_ROOT_DIR_PATH='{{.CLIENT_ROOT_DIR_PATH}}';
+      if [ "${FILE_PATH}" == "${CLIENT_ROOT_DIR_PATH:0:${#FILE_PATH}}" ]; then
+        echo "${CLIENT_ROOT_DIR_PATH}";
+      elif [ "${CLIENT_ROOT_DIR_PATH}" == "${FILE_PATH:0:${#CLIENT_ROOT_DIR_PATH}}" ]; then
+        echo "${FILE_PATH}";
+      fi
+  WRK_SERVER_FILE_PATH:
+    sh:
+      FILE_PATH='{{.FILE_PATH}}';
+      SERVER_ROOT_DIR_PATH='{{.SERVER_ROOT_DIR_PATH}}';
+      if [ "${FILE_PATH}" == "${SERVER_ROOT_DIR_PATH:0:${#FILE_PATH}}" ]; then
+        echo "${SERVER_ROOT_DIR_PATH}";
+      elif [ "${SERVER_ROOT_DIR_PATH}" == "${FILE_PATH:0:${#SERVER_ROOT_DIR_PATH}}" ]; then
+        echo "${FILE_PATH}";
+      fi
+
+  WRK_CLIENT_FILE_DIR_PATH:
+    sh:
+      if [ "{{.WRK_CLIENT_FILE_PATH}}" == "" ]; then
+        echo "";
+      elif [ -d "{{.WRK_CLIENT_FILE_PATH}}" ]; then
+        echo "{{.WRK_CLIENT_FILE_PATH}}";
+      else
+        echo $(realpath $(dirname "{{.WRK_CLIENT_FILE_PATH}}"));
+      fi
+  WRK_SERVER_FILE_DIR_PATH:
+    sh:
+      if [ "{{.WRK_SERVER_FILE_PATH}}" == "" ]; then
+        echo "";
+      elif [ -d "{{.WRK_SERVER_FILE_PATH}}" ]; then 
+        echo "{{.WRK_SERVER_FILE_PATH}}"; 
+      else 
+        echo $(realpath $(dirname "{{.WRK_SERVER_FILE_PATH}}")); 
+      fi
+
+
+  WRK_CLIENT_ROOT_DIR_PATH:
+    sh:
+      FILE_PATH='{{.FILE_PATH}}';
+      CLIENT_ROOT_DIR_PATH='{{.CLIENT_ROOT_DIR_PATH}}';
+      if 
+        [ "${CLIENT_ROOT_DIR_PATH}" == "${FILE_PATH:0:${#CLIENT_ROOT_DIR_PATH}}" ] 
+        ||
+        [ "${FILE_PATH}" == "${CLIENT_ROOT_DIR_PATH:0:${#FILE_PATH}}" ]
+        ;
+      then
+        echo "${CLIENT_ROOT_DIR_PATH}";
+      fi
+  WRK_SERVER_ROOT_DIR_PATH:
+    sh:
+      FILE_PATH='{{.FILE_PATH}}';
+      SERVER_ROOT_DIR_PATH='{{.SERVER_ROOT_DIR_PATH}}';
+      if
+        [ "${SERVER_ROOT_DIR_PATH}" == "${FILE_PATH:0:${#SERVER_ROOT_DIR_PATH}}" ]
+        ||
+        [ "${FILE_PATH}" == "${SERVER_ROOT_DIR_PATH:0:${#FILE_PATH}}" ]
+        ;
+      then
+        echo "${SERVER_ROOT_DIR_PATH}";
+      fi
+
+tasks:
+
+  check-file:
+    cmds:
+      - vars:
+          WRK_FILE_PATH: '{{.WRK_CLIENT_FILE_PATH}}'
+          WRK_FILE_DIR_PATH: '{{.WRK_CLIENT_FILE_DIR_PATH}}'
+          WRK_ROOT_DIR_PATH: '{{.WRK_CLIENT_ROOT_DIR_PATH}}'
+        ignore_error: true
+        task: check-internal
+      - vars:
+          WRK_FILE_PATH: '{{.WRK_SERVER_FILE_PATH}}'
+          WRK_FILE_DIR_PATH: '{{.WRK_SERVER_FILE_DIR_PATH}}'
+          WRK_ROOT_DIR_PATH: '{{.WRK_SERVER_ROOT_DIR_PATH}}'
+        ignore_error: true
+        task: check-internal
+
+  check-directory:
+    cmds:
+      - vars:
+          WRK_FILE_PATH: '{{.WRK_CLIENT_FILE_DIR_PATH}}'
+          WRK_FILE_DIR_PATH: '{{.WRK_CLIENT_FILE_DIR_PATH}}/...'
+          WRK_ROOT_DIR_PATH: '{{.WRK_CLIENT_ROOT_DIR_PATH}}'
+        ignore_error: true
+        task: check-internal
+      - vars:
+          WRK_FILE_PATH: '{{.WRK_SERVER_FILE_DIR_PATH}}'
+          WRK_FILE_DIR_PATH: '{{.WRK_SERVER_FILE_DIR_PATH}}/...'
+          WRK_ROOT_DIR_PATH: '{{.WRK_SERVER_ROOT_DIR_PATH}}'
+        ignore_error: true
+        task: check-internal
+
+  check-internal:
+    status:
+      - test "{{.WRK_ROOT_DIR_PATH}}" == ""
+    dir: '{{.WRK_ROOT_DIR_PATH}}'
+    cmds:
+#      - |
+#        echo "
+#          TASKFILE '{{.TASKFILE}}'
+#          ROOT_TASKFILE '{{.ROOT_TASKFILE}}'
+#          USER_WORKING_DIR '{{.USER_WORKING_DIR}}'
+#
+#          FILE_PATH '{{.FILE_PATH}}'
+#          CLIENT_ROOT_DIR_PATH '{{.CLIENT_ROOT_DIR_PATH}}'
+#          SERVER_ROOT_DIR_PATH '{{.SERVER_ROOT_DIR_PATH}}'
+#
+#          WRK_FILE_PATH '{{.WRK_FILE_PATH}}'
+#          WRK_CLIENT_FILE_PATH '{{.WRK_CLIENT_FILE_PATH}}'
+#          WRK_SERVER_FILE_PATH '{{.WRK_SERVER_FILE_PATH}}'
+#
+#          WRK_FILE_DIR_PATH '{{.WRK_FILE_DIR_PATH}}'
+#          WRK_CLIENT_FILE_DIR_PATH '{{.WRK_CLIENT_FILE_DIR_PATH}}'
+#          WRK_SERVER_FILE_DIR_PATH '{{.WRK_SERVER_FILE_DIR_PATH}}'
+#
+#          WRK_ROOT_DIR_PATH '{{.WRK_ROOT_DIR_PATH}}'
+#          WRK_CLIENT_ROOT_DIR_PATH '{{.WRK_CLIENT_ROOT_DIR_PATH}}'
+#          WRK_SERVER_ROOT_DIR_PATH '{{.WRK_SERVER_ROOT_DIR_PATH}}'
+#
+#        " > /dev/null
+#      - echo "PWD '$PWD'"
+      - gci write -s standard -s default -s prefix\(github.com/Kirill-Znamenskiy\) -s localmodule --skip-generated {{.WRK_FILE_PATH}}
+      - gofumpt -l -w {{.WRK_FILE_PATH}}
+      - golangci-lint run --out-format=tab {{.WRK_FILE_DIR_PATH}}
+#    silent: true
+    ignore_error: true

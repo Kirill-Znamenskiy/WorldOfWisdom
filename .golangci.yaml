@@ -1,0 +1,34 @@
+linters:
+  enable-all: true
+  disable:
+    - wsl
+    - depguard
+    - wrapcheck
+    - nonamedreturns
+    - gomnd # "The linter 'gomnd' is deprecated (since v1.58.0) due to: The linter has been renamed. Replaced by mnd."
+    - execinquery # "The linter 'execinquery' is deprecated (since v1.58.0) due to: The repository of the linter has been archived by the owner. "
+    - exportloopref # "The linter 'exportloopref' is deprecated (since v1.60.2) due to: Since Go1.22 (loopvar) this linter is no longer relevant. Replaced by copyloopvar."
+
+
+
+linters-settings:
+  gci:
+    custom-order: true
+    sections:
+      - standard # Standard section: captures all standard packages.
+      - default # Default section: contains all imports that could not be matched to another section type.
+      - prefix(github.com/Kirill-Znamenskiy) # Custom section: groups all imports with the specified Prefix.
+      - localmodule # Local module section: contains all local packages. This section is not present unless explicitly enabled.
+    skip-generated: true
+  gocritic:
+    enable-all: true
+    disabled-checks:
+      - equalFold
+      - commentedOutCode
+      - commentFormatting
+  tagalign:
+    sort: false
+    align: true
+  nlreturn:
+    block-size: 5
+

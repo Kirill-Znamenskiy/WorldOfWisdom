@@ -1,0 +1,5 @@
+
+# ignore all config files, except default one
+/config*
+!/config.yaml
+

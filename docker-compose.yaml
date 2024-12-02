@@ -1,0 +1,60 @@
+configs:
+  client-config.yaml:
+    file: ./client/configs/config.yaml
+  server-config.yaml:
+    file: ./server/configs/config.yaml
+secrets:
+  client-config.prod.yaml:
+    file: ./client/configs/config.prod.yam
+  server-config.prod.yaml:
+    file: ./server/configs/config.prod.yam
+
+name: world-of-wisdom
+
+services:
+  client:
+    build:
+      pull: true
+      target: main
+      context: ./client
+      args:
+        BUILD_ENV: ${BUILD_ENV:-UNKNOWN}
+        BUILD_GIT_SHOW_VERSION: ${BUILD_GIT_SHOW_VERSION:-UNKNOWN}
+    environment:
+      ENV: ${ENV:-UNKNOWN}
+    configs: [ { source: client-config.yaml, target: /wrkdir/config.yaml }]
+    secrets: [ { source: client-config.prod.yaml, target: /wrkdir/config.prod.yaml }]
+    command: "./config.yaml+./config.prod.yaml"
+    deploy:
+      restart_policy:
+        delay: 15s
+        window: 15s
+        max_attempts: 3
+        condition: on-failure
+
+  server:
+    build:
+      pull: true
+      target: main
+      context: ./server
+      args:
+        BUILD_ENV: ${BUILD_ENV:-UNKNOWN}
+        BUILD_GIT_SHOW_VERSION: ${BUILD_GIT_SHOW_VERSION:-UNKNOWN}
+    environment:
+      ENV: ${ENV:-UNKNOWN}
+    configs: [ { source: server-config.yaml, target: /wrkdir/config.yaml }]
+    secrets: [ { source: server-config.prod.yaml, target: /wrkdir/config.prod.yaml }]
+    command: "./config.yaml+./config.prod.yaml"
+    deploy:
+      restart_policy:
+        delay: 15s
+        window: 15s
+        max_attempts: 3
+        condition: on-failure
+
+networks:
+  default:
+    name: ${COMPOSE_PROJECT_NAME}
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: ${COMPOSE_PROJECT_NAME}
