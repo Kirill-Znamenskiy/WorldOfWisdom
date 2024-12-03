@@ -11,29 +11,41 @@ import (
 	"testing"
 )
 
+func newRandomHC(t *testing.T, bits int) *hashcash.Hashcash {
+	resource := make([]byte, 5)
+	_, err := rand.Read(resource)
+	require.NoError(t, err)
+	ret, err := hashcash.New(bits, fmt.Sprintf("%x", resource))
+	require.NoError(t, err)
+	return ret
+}
+
 func TestPOWManager_CheckPOW(t *testing.T) {
 
 	ctx := context.Background()
 	lcPOWManager := New(3)
 
-	for i := 0; i < 3; i++ {
-		fmt.Printf("\n\n\n")
-		hc, _ := hashcash.New(1, "asdfa")
-		fmt.Printf("before-newhc: %s\n", hc.String())
-		hc.Compute(1)
-		fmt.Printf("after-newhc: %s\n", hc.String())
-	}
+	newhc := func(bits int) *hashcash.Hashcash { return newRandomHC(t, bits) }
 
-	newhc := func(bits int) *hashcash.Hashcash {
-		resource := make([]byte, 5)
-		_, err := rand.Read(resource)
+	newhcomputed := func(bits int) *hashcash.Hashcash {
+		hc := newRandomHC(t, bits)
+		err := hc.Compute(0)
 		require.NoError(t, err)
-		ret, err := hashcash.New(bits, string(resource))
-		require.NoError(t, err)
-		return ret
+		return hc
 	}
 
 	kztest.RunTests(t, lcPOWManager.CheckPOW, []kztest.TestKit{
+		{Arg1: ctx, Arg2: newhc(0).String(), Result1: false, Result2: assert.NoError},
+		{Arg1: ctx, Arg2: newhc(1).String(), Result1: false, Result2: assert.NoError},
+		{Arg1: ctx, Arg2: newhc(2).String(), Result1: false, Result2: assert.NoError},
 		{Arg1: ctx, Arg2: newhc(3).String(), Result1: false, Result2: assert.NoError},
+		{Arg1: ctx, Arg2: newhc(4).String(), Result1: false, Result2: assert.NoError},
+		{Arg1: ctx, Arg2: newhc(5).String(), Result1: false, Result2: assert.NoError},
+		{Arg1: ctx, Arg2: newhcomputed(0).String(), Result1: false, Result2: assert.NoError},
+		{Arg1: ctx, Arg2: newhcomputed(1).String(), Result1: false, Result2: assert.NoError},
+		{Arg1: ctx, Arg2: newhcomputed(2).String(), Result1: false, Result2: assert.NoError},
+		{Arg1: ctx, Arg2: newhcomputed(3).String(), Result1: true, Result2: assert.NoError},
+		{Arg1: ctx, Arg2: newhcomputed(4).String(), Result1: true, Result2: assert.NoError},
+		{Arg1: ctx, Arg2: newhcomputed(5).String(), Result1: true, Result2: assert.NoError},
 	})
 }
