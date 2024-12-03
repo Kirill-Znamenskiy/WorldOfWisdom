@@ -6,7 +6,8 @@ FROM golang:alpine AS builder
 WORKDIR /wrkdir
 
 RUN set -xe \
-    && apk add --no-cache vim wget curl less procps jq git \
+    && apk add --no-cache vim wget curl less procps jq git ca-certificates \
+    && update-ca-certificates \
     && set +xe
 
 # pre-copy/cache go.mod for pre-downloading dependencies and only redownloading them in subsequent builds if they change
@@ -67,6 +68,6 @@ COPY --from=builder /wrkdir/bins/ ./
 
 ### Build main image
 FROM cmd AS main
-ENTRYPOINT ["/wrkdir/server"]
+ENTRYPOINT ["/wrkdir/main"]
 
 

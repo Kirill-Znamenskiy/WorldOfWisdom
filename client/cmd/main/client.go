@@ -2,10 +2,17 @@ package main
 
 import (
 	"context"
-	"github.com/Kirill-Znamenskiy/WorldOfWisdom/server/pkg/proto"
+	"fmt"
+	"net"
 	"os"
+	"time"
 
+	"github.com/Kirill-Znamenskiy/WorldOfWisdom/server/pkg/proto"
 	"github.com/Kirill-Znamenskiy/kzlogger/lg"
+	"github.com/Kirill-Znamenskiy/kzlogger/lga"
+	"github.com/Kirill-Znamenskiy/kzlogger/lge"
+
+	"github.com/Kirill-Znamenskiy/WorldOfWisdom/client/internal/config"
 )
 
 type Ctx = context.Context
@@ -19,7 +26,64 @@ func main() {
 	lg.IsTryExtractWrkLoggerFromCtx = false
 	lg.DefaultLogger = lg.MustNewLogger(lg.NewTextHandler(os.Stdout, nil))
 
-	req := proto.Request{}
+	cfg, err := config.Init(ctx)
+	if err != nil {
+		lg.Error(ctx, lge.WrapWithCaller(err))
+		os.Exit(1)
+	}
+	cfg.BuildGitShowVersion = prvBuildGitShowVersion
+	lg.Info(ctx, "Config successfully inited.", lga.String("cfg.BuildGitShowVersion", cfg.BuildGitShowVersion))
 
+	err = lg.Wrk(ctx).ParseAndSetLevel(cfg.LogLevel)
+	lg.Info(ctx,
+		"lg.Default().ParseAndSetLevel(cfg.LogLevel)",
+		lga.String("cfg.LogLevel", cfg.LogLevel),
+		lga.Any("err-result", err),
+	)
+	if err != nil {
+		lg.Error(ctx, lge.WrapWithCaller(err, lga.Str("cfg.LogLevel", cfg.LogLevel)))
+		os.Exit(1)
+	}
+
+	conn, err := net.Dial("tcp", cfg.ServerAddress)
+	if err != nil {
+		lg.Error(ctx, "net.Dial", lga.Err(err))
+	}
+
+	for {
+		time.Sleep(5 * time.Second)
+		fmt.Printf("hello\n")
+
+		err = run(ctx, conn)
+		if err != nil {
+			lg.Error(ctx, "run", lga.Err(err))
+		}
+		// defer conn.Close()
+	}
+
+	_ = ctx
 	_ = prvBuildGitShowVersion
+}
+
+func run(ctx Ctx, conn net.Conn) (err error) {
+	req := new(proto.Request)
+	req.Type = proto.RequestType_WISDOM_REQUEST
+	req.Pow = "asdf"
+
+	err = proto.SendMessage(ctx, conn, req)
+	if err != nil {
+		return err
+	}
+
+	resp := new(proto.Response)
+	err = proto.ReadMessage(ctx, conn, resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Type == proto.ResponseType_WISDOM_RESPONSE {
+		fmt.Printf("WISDOM QUOTE: %s", resp.GetWisdomResponse().Quote)
+	}
+
+	return nil
 }

@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"errors"
+
 	"github.com/Kirill-Znamenskiy/WorldOfWisdom/server/internal/entity"
 	mPOW "github.com/Kirill-Znamenskiy/WorldOfWisdom/server/internal/inner/managers/pow-manager"
 	"github.com/Kirill-Znamenskiy/WorldOfWisdom/server/pkg/proto"
@@ -11,7 +12,7 @@ import (
 type Ctx = context.Context
 
 type POWManager interface {
-	CheckPOW(Ctx, mPOW.POW) error
+	CheckPOW(Ctx, mPOW.POW) (bool, error)
 	GenerateNewChallenge(Ctx, mPOW.Client) (mPOW.Challenge, error)
 }
 
@@ -41,12 +42,23 @@ func (hs *Handlers) HandleRequest(ctx Ctx, client string, req *proto.Request) (r
 		return nil, err
 	}
 
+	var ok bool
 	switch req.Type {
 	case proto.RequestType_WISDOM_REQUEST:
-		err = hs.prvPOWManager.CheckPOW(ctx, req.Pow)
+		ok, err = hs.prvPOWManager.CheckPOW(ctx, req.Pow)
 		if err != nil {
 			return nil, err
 		}
+		if !ok {
+			resp.Type = proto.ResponseType_ERROR
+			resp.Resp = &proto.Response_Error{
+				Error: &proto.Error{
+					Code:    101,
+					Message: "provide valid proof of work",
+				},
+			}
+		}
+		resp.Type = proto.ResponseType_WISDOM_RESPONSE
 		lcGetWisdomResponse, err := hs.HandleWisdomRequest(ctx, req.GetWisdomRequest())
 		if err != nil {
 			return nil, err

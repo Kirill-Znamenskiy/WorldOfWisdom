@@ -1,31 +1,34 @@
-# "Word of Wisdom" TCP-server with protection from DDOS based on Proof of Work
+# "Word of Wisdom" TCP server and client with protection from DDOS based on Proof of Work
 
 ## 1. Description
-This project is a solution for some interview question on Golang.
+This project is an implementation of “Word of Wisdom” tcp server and client.
+TCP server is protected from DDOS attacks with the [Poof of Work](https://en.wikipedia.org/wiki/Proof_of_work) approach,
+the challenge-response protocol should be used.  
 
 ## 2. Getting started
 ### 2.1 Requirements
-+ [Go 1.22+](https://go.dev/dl/) installed (to run tests, start server or client without Docker)
-+ [Docker](https://docs.docker.com/engine/install/) installed (to run docker-compose)
++ [Go 1.22+](https://go.dev/dl/) installed (to run tests, start local server or client)
++ [Task](https://taskfile.dev/installation/) installed (to run any task)
++ [Docker](https://docs.docker.com/engine/install/) installed (to start server and client with docker-compose)
 
-### 2.2 Start server and client by docker-compose:
+### 2.2 Start server and client with docker-compose:
 ```
-make start
-```
-
-### 2.3 Start only server:
-```
-make start-server
+task start
 ```
 
-### 2.4 Start only client:
+### 2.3 Start local server:
 ```
-make start-client
+task start-server
+```
+
+### 2.4 Start local client:
+```
+task start-client
 ```
 
 ### 2.5 Launch tests:
 ```
-make test
+task test
 ```
 
 ## 3. Problem description
@@ -36,26 +39,11 @@ The choice of the PoW algorithm should be explained.
 After Prof Of Work verification, server should send one of the quotes from “word of wisdom” book or any other collection of the quotes.  
 Docker file should be provided both for the server and for the client that solves the PoW challenge.
 
-## 4. Protocol definition
-This solution uses TCP-based protocol. Each messsage uses delimiter \n and consists of two parts divided by symbol |:
-+ header - integer number to indicate, which type of request was sent (analogue of URL in HTTP-protocol)
-+ payload - optional string, that also could be json of some struct (depends on type of request)
+## 4. Protocol description
+This solution uses TCP-based binary protocol with [protobuf](https://protobuf.dev) as serializing mechanisms.
+Proto file is located in `./server/pkg/proto/proto.proto`.
 
-### 4.1 Types of requests
-Solution supports 5 types of requests, switching by header:
-+ 0 - Quit - signal to other side to close connection
-+ 1 - RequestChallenge - from client to server - request new challenge from server
-+ 2 - ResponseChallenge - from server to client - message with challenge for client
-+ 3 - RequestResource - from client to server - message with solved challenge
-+ 4 - ResponseResource - from server to client - message with useful info is solution is correct, or with error if not
-
-### 4.2 Examples of protocol message
-Here i provide examples for all types of requests:
-+ 0 Quit: ```0|```
-+ 1 RequestChallenge: ```1|```
-+ 2 ResponseChallenge: ```2|{"Version":1,"ZerosCount":3,"Date":1647252023,"Resource":"client1","Rand":"OTgwODE=","Counter":0}```
-+ 3 RequestResource: ```3|{"Version":1,"ZerosCount":3,"Date":1647252023,"Resource":"client1","Rand":"OTgwODE=","Counter":126231}```
-+ 4 ResponseResource ```4|some cool quote from Word of Wisdom```
+The shared Go implementation of the interaction protocol is stored in `./server/pkg/proto` and is available as a library for integration into any Go project, enabling the creation of custom independent clients.
 
 ## 5. Proof of Work
 Idea of Proof of Work for DDOS protection is that client, which wants to get some resource from server, 
@@ -87,27 +75,41 @@ But complexity of challenge could be dynamically solved by changing of required 
 2. Pre-computing challenges in advance before DDOS-attack. 
 Some clients could parse protocol and compute many challenges to apply all of it in one moment.
 It could be solved by additional validation of hashcash's params on server. 
-For example, on creating challenge server could save **rand** value to Redis cache and check it's existence on verify step
-(that is implemented in this solution).
+For example, on creating challenge server could save **rand** value to Redis cache and check it's existence on verify step.
 
 But all of those disadvantages could be solved in real production environment. 
 
-## 6. Structure of the project
-Project structure implements [Go-layout](https://github.com/golang-standards/project-layout) pattern.
-Existing directories:
-+ cmd/client - main.go for client
-+ cmd/server - main.go for server
-+ config - config files for both server and client
-+ internal/client - all logic of client
-+ internal/server - all logic of server
-+ internal/pkg/config - logic of parsing config file and env variable
-+ internal/pkg/pow - logic of chosen PoW algorithm (Hashcash)
-+ internal/pkg/protocol - constants, models and parsing logic for implemented TCP-protocol
-+ internal/pkg/clock - internal struct for getting current time (and be easily mocked in tests)
+## 6. Project Structure
+
+The project is divided into two separate Go projects located in `./server` and `./client`.
+
+Each Go project 
+is implemented in accordance with the [Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html) principles 
+and
+adheres to the  [Go-layout](https://github.com/golang-standards/project-layout) pattern.
+
+
+Server directories:
+- ./server/cmd/main - server main.go
+- ./server/configs - server config files
+- ./server/internal/config - server config model and logic
+- ./server/internal/entity - server entities
+- ./server/internal/inner - server inner layer (business logic aka use-cases, manager, services)
+- ./server/internal/outer - server outer layer (tcp-server, repository, etc.)
+- ./server/pkg/hashcash - implementation of Hashcash PoW approach 
+- ./server/pkg/proto - implementation of the interaction protocol
+- ./server/pkg/utils - some auxiliary utilities
+
+Client directories:
+- ./client/cmd/main - client main.go
+- ./client/configs - client config files
+- ./client/internal/config - client config model and logic
+- ./client/internal/outer - client outer layer (tcp-client)
+
 
 ## 7. Ways to improve
 Of course, every project could be improved. This project also has some ways to improve:
 + add dynamic management of Hashcash complexity based on server's overload 
 (to improve DDOS protection)
-+ move array of quotes to SQLite or PostgreSQL database (to get closer to real production applications)
++ move the array of quotes to an external data storage, such as **SQLite** or **PostgreSQL**.
 + add integration tests for simulate DDOS attack - spawn more client instances

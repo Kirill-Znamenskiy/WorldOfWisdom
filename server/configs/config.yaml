@@ -2,4 +2,6 @@ env: PROD
 log_level: INFO
 
 server:
-  address: -SHOULD-BE-OVERRIDDEN-
+  address: localhost:1234
+
+

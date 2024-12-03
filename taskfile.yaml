@@ -1,75 +1,34 @@
 version: '3'
 
-vars:
-  FILE_PATH: '{{.FILE_PATH}}'
-  CLIENT_ROOT_DIR_PATH: { sh: "realpath './client'" }
-  SERVER_ROOT_DIR_PATH: { sh: "realpath './server'" }
-
-  WRK_CLIENT_FILE_PATH:
-    sh:
-      FILE_PATH='{{.FILE_PATH}}';
-      CLIENT_ROOT_DIR_PATH='{{.CLIENT_ROOT_DIR_PATH}}';
-      if [ "${FILE_PATH}" == "${CLIENT_ROOT_DIR_PATH:0:${#FILE_PATH}}" ]; then
-        echo "${CLIENT_ROOT_DIR_PATH}";
-      elif [ "${CLIENT_ROOT_DIR_PATH}" == "${FILE_PATH:0:${#CLIENT_ROOT_DIR_PATH}}" ]; then
-        echo "${FILE_PATH}";
-      fi
-  WRK_SERVER_FILE_PATH:
-    sh:
-      FILE_PATH='{{.FILE_PATH}}';
-      SERVER_ROOT_DIR_PATH='{{.SERVER_ROOT_DIR_PATH}}';
-      if [ "${FILE_PATH}" == "${SERVER_ROOT_DIR_PATH:0:${#FILE_PATH}}" ]; then
-        echo "${SERVER_ROOT_DIR_PATH}";
-      elif [ "${SERVER_ROOT_DIR_PATH}" == "${FILE_PATH:0:${#SERVER_ROOT_DIR_PATH}}" ]; then
-        echo "${FILE_PATH}";
-      fi
-
-  WRK_CLIENT_FILE_DIR_PATH:
-    sh:
-      if [ "{{.WRK_CLIENT_FILE_PATH}}" == "" ]; then
-        echo "";
-      elif [ -d "{{.WRK_CLIENT_FILE_PATH}}" ]; then
-        echo "{{.WRK_CLIENT_FILE_PATH}}";
-      else
-        echo $(realpath $(dirname "{{.WRK_CLIENT_FILE_PATH}}"));
-      fi
-  WRK_SERVER_FILE_DIR_PATH:
-    sh:
-      if [ "{{.WRK_SERVER_FILE_PATH}}" == "" ]; then
-        echo "";
-      elif [ -d "{{.WRK_SERVER_FILE_PATH}}" ]; then 
-        echo "{{.WRK_SERVER_FILE_PATH}}"; 
-      else 
-        echo $(realpath $(dirname "{{.WRK_SERVER_FILE_PATH}}")); 
-      fi
-
-
-  WRK_CLIENT_ROOT_DIR_PATH:
-    sh:
-      FILE_PATH='{{.FILE_PATH}}';
-      CLIENT_ROOT_DIR_PATH='{{.CLIENT_ROOT_DIR_PATH}}';
-      if 
-        [ "${CLIENT_ROOT_DIR_PATH}" == "${FILE_PATH:0:${#CLIENT_ROOT_DIR_PATH}}" ] 
-        ||
-        [ "${FILE_PATH}" == "${CLIENT_ROOT_DIR_PATH:0:${#FILE_PATH}}" ]
-        ;
-      then
-        echo "${CLIENT_ROOT_DIR_PATH}";
-      fi
-  WRK_SERVER_ROOT_DIR_PATH:
-    sh:
-      FILE_PATH='{{.FILE_PATH}}';
-      SERVER_ROOT_DIR_PATH='{{.SERVER_ROOT_DIR_PATH}}';
-      if
-        [ "${SERVER_ROOT_DIR_PATH}" == "${FILE_PATH:0:${#SERVER_ROOT_DIR_PATH}}" ]
-        ||
-        [ "${FILE_PATH}" == "${SERVER_ROOT_DIR_PATH:0:${#FILE_PATH}}" ]
-        ;
-      then
-        echo "${SERVER_ROOT_DIR_PATH}";
-      fi
 
 tasks:
+
+  docker-compose-up:
+    docker-compose up 
+      --build 
+      --pull=always 
+      --remove-orphans 
+      --abort-on-container-exit
+
+  docker-compose-up--force-recreate:
+    docker-compose up 
+      --build 
+      --pull=always 
+      --remove-orphans 
+      --force-recreate 
+      --abort-on-container-exit
+
+
+  start-client: [ { vars: { WRK_DIR_PATH: ./client }, task: start-anything } ]
+  start-server: [ { vars: { WRK_DIR_PATH: ./server }, task: start-anything } ]
+  start-anything:
+    dir: '{{.WRK_DIR_PATH}}'
+    vars:
+      LOCAL_CONFIG_FILE_PATH: ./configs/config.local.yaml
+    interactive: true
+    cmds:
+      - 'test -f {{.LOCAL_CONFIG_FILE_PATH}} || echo -e "env: LOCAL\nlog_level: INFO" > {{.LOCAL_CONFIG_FILE_PATH}}'
+      - go run ./cmd/main/*.go
 
   check-file:
     cmds:
@@ -135,3 +94,74 @@ tasks:
       - golangci-lint run --out-format=tab {{.WRK_FILE_DIR_PATH}}
 #    silent: true
     ignore_error: true
+
+vars:
+  BUILD_GIT_SHOW_VERSION:
+    sh: git show --no-color --no-patch --decorate | head -n 1
+  FILE_PATH: '{{.FILE_PATH}}'
+  CLIENT_ROOT_DIR_PATH: { sh: "realpath './client'" }
+  SERVER_ROOT_DIR_PATH: { sh: "realpath './server'" }
+
+  WRK_CLIENT_FILE_PATH:
+    sh:
+      FILE_PATH='{{.FILE_PATH}}';
+      CLIENT_ROOT_DIR_PATH='{{.CLIENT_ROOT_DIR_PATH}}';
+      if [ "${FILE_PATH}" == "${CLIENT_ROOT_DIR_PATH:0:${#FILE_PATH}}" ]; then
+      echo "${CLIENT_ROOT_DIR_PATH}";
+      elif [ "${CLIENT_ROOT_DIR_PATH}" == "${FILE_PATH:0:${#CLIENT_ROOT_DIR_PATH}}" ]; then
+      echo "${FILE_PATH}";
+      fi
+  WRK_SERVER_FILE_PATH:
+    sh:
+      FILE_PATH='{{.FILE_PATH}}';
+      SERVER_ROOT_DIR_PATH='{{.SERVER_ROOT_DIR_PATH}}';
+      if [ "${FILE_PATH}" == "${SERVER_ROOT_DIR_PATH:0:${#FILE_PATH}}" ]; then
+      echo "${SERVER_ROOT_DIR_PATH}";
+      elif [ "${SERVER_ROOT_DIR_PATH}" == "${FILE_PATH:0:${#SERVER_ROOT_DIR_PATH}}" ]; then
+      echo "${FILE_PATH}";
+      fi
+
+  WRK_CLIENT_FILE_DIR_PATH:
+    sh:
+      if [ "{{.WRK_CLIENT_FILE_PATH}}" == "" ]; then
+      echo "";
+      elif [ -d "{{.WRK_CLIENT_FILE_PATH}}" ]; then
+      echo "{{.WRK_CLIENT_FILE_PATH}}";
+      else
+      echo $(realpath $(dirname "{{.WRK_CLIENT_FILE_PATH}}"));
+      fi
+  WRK_SERVER_FILE_DIR_PATH:
+    sh:
+      if [ "{{.WRK_SERVER_FILE_PATH}}" == "" ]; then
+      echo "";
+      elif [ -d "{{.WRK_SERVER_FILE_PATH}}" ]; then
+      echo "{{.WRK_SERVER_FILE_PATH}}";
+      else
+      echo $(realpath $(dirname "{{.WRK_SERVER_FILE_PATH}}"));
+      fi
+
+
+  WRK_CLIENT_ROOT_DIR_PATH:
+    sh:
+      FILE_PATH='{{.FILE_PATH}}';
+      CLIENT_ROOT_DIR_PATH='{{.CLIENT_ROOT_DIR_PATH}}';
+      if
+      [ "${CLIENT_ROOT_DIR_PATH}" == "${FILE_PATH:0:${#CLIENT_ROOT_DIR_PATH}}" ]
+      ||
+      [ "${FILE_PATH}" == "${CLIENT_ROOT_DIR_PATH:0:${#FILE_PATH}}" ]
+      ;
+      then
+      echo "${CLIENT_ROOT_DIR_PATH}";
+      fi
+  WRK_SERVER_ROOT_DIR_PATH:
+    sh:
+      FILE_PATH='{{.FILE_PATH}}';
+      SERVER_ROOT_DIR_PATH='{{.SERVER_ROOT_DIR_PATH}}';
+      if
+      [ "${SERVER_ROOT_DIR_PATH}" == "${FILE_PATH:0:${#SERVER_ROOT_DIR_PATH}}" ]
+      ||
+      [ "${FILE_PATH}" == "${SERVER_ROOT_DIR_PATH:0:${#FILE_PATH}}" ]
+      ;
+      then
+      echo "${SERVER_ROOT_DIR_PATH}";
+      fi

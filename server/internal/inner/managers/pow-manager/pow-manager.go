@@ -2,6 +2,7 @@ package mPOW
 
 import (
 	"context"
+
 	"github.com/Kirill-Znamenskiy/WorldOfWisdom/server/pkg/hashcash"
 )
 
@@ -12,8 +13,7 @@ type (
 	Challenge = string
 )
 
-type POWManager struct {
-}
+type POWManager struct{}
 
 func New() *POWManager {
 	return &POWManager{}
@@ -27,6 +27,6 @@ func (m *POWManager) GenerateNewChallenge(ctx Ctx, client string) (Challenge, er
 	return hc.String(), nil
 }
 
-func (m *POWManager) CheckPOW(Ctx, POW) error {
-	return nil
+func (m *POWManager) CheckPOW(Ctx, POW) (bool, error) {
+	return true, nil
 }

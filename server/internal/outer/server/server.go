@@ -2,15 +2,13 @@ package server
 
 import (
 	"context"
-	"encoding/binary"
-	"github.com/Kirill-Znamenskiy/WorldOfWisdom/server/pkg/proto"
+	"net"
+
 	"github.com/Kirill-Znamenskiy/kzlogger/lg"
 	"github.com/Kirill-Znamenskiy/kzlogger/lga"
 	"github.com/Kirill-Znamenskiy/kzlogger/lge"
-	protobuf "google.golang.org/protobuf/proto"
-	"io"
-	"net"
-	"unsafe"
+
+	"github.com/Kirill-Znamenskiy/WorldOfWisdom/server/pkg/proto"
 )
 
 type Ctx = context.Context
@@ -56,30 +54,14 @@ func (s *Server) GoHandleConnection(ctx Ctx, conn net.Conn) {
 		s.lgr.Error(ctx, "s.HandleConnection(ctx, conn)", lga.Err(err))
 	}
 }
+
 func (s *Server) HandleConnection(ctx Ctx, conn net.Conn) (err error) {
 	defer conn.Close()
-	var (
-		bs   []byte
-		size uint32
-	)
 	for {
-		bs = make([]byte, unsafe.Sizeof(size))
-		_, err = io.ReadFull(conn, bs)
-		if err != nil {
-			return lge.WrapWithCaller(err)
-		}
-		size = binary.BigEndian.Uint32(bs)
-
-		bs = make([]byte, size)
-		_, err = io.ReadFull(conn, bs)
-		if err != nil {
-			return lge.WrapWithCaller(err)
-		}
-
 		req := new(proto.Request)
-		err = protobuf.Unmarshal(bs, req)
+		err = proto.ReadMessage(ctx, conn, req)
 		if err != nil {
-			//return err
+			return err
 		}
 		lg.Debug(ctx, "req", lga.Any("req", req))
 
@@ -93,7 +75,7 @@ func (s *Server) HandleConnection(ctx Ctx, conn net.Conn) (err error) {
 
 		lg.Debug(ctx, "resp", lga.Any("resp", resp))
 
-		err = SendResponse(ctx, conn, resp)
+		err = proto.SendMessage(ctx, conn, resp)
 		if err != nil {
 			return err
 		}
@@ -106,29 +88,5 @@ func (s *Server) HandleRequest(ctx Ctx, client string, req *proto.Request) (resp
 }
 
 func (s *Server) Close(ctx Ctx) (err error) {
-	return nil
-}
-
-func SendResponse(ctx Ctx, conn net.Conn, resp *proto.Response) error {
-	respBs, err := protobuf.Marshal(resp)
-	if err != nil {
-		return err
-	}
-
-	size := uint32(len(respBs))
-	sizeBs := binary.BigEndian.AppendUint32(nil, size)
-
-	bs := make([]byte, 0, len(sizeBs)+len(respBs))
-	bs = append(bs, sizeBs...)
-	bs = append(bs, respBs...)
-
-	n, err := conn.Write(bs)
-	if err != nil {
-		return err
-	}
-	if n != len(bs) {
-		return io.ErrShortWrite
-	}
-
 	return nil
 }

@@ -1,3 +1,5 @@
+name: world-of-wisdom
+
 configs:
   client-config.yaml:
     file: ./client/configs/config.yaml
@@ -5,26 +7,34 @@ configs:
     file: ./server/configs/config.yaml
 secrets:
   client-config.prod.yaml:
-    file: ./client/configs/config.prod.yam
+    file: ./client/configs/config.prod.yaml
   server-config.prod.yaml:
-    file: ./server/configs/config.prod.yam
+    file: ./server/configs/config.prod.yaml
 
-name: world-of-wisdom
 
 services:
+  alpine:
+    image: alpine
+    command: sleep infinity
+
   client:
     build:
       pull: true
+      no_cache: true
       target: main
       context: ./client
+      additional_contexts:
+        server: ./server
       args:
         BUILD_ENV: ${BUILD_ENV:-UNKNOWN}
         BUILD_GIT_SHOW_VERSION: ${BUILD_GIT_SHOW_VERSION:-UNKNOWN}
     environment:
       ENV: ${ENV:-UNKNOWN}
+      CONFIG_FILE_PATH: "./config.yaml+./config.prod.yaml"
     configs: [ { source: client-config.yaml, target: /wrkdir/config.yaml }]
     secrets: [ { source: client-config.prod.yaml, target: /wrkdir/config.prod.yaml }]
-    command: "./config.yaml+./config.prod.yaml"
+    entrypoint: ""
+    command: "sleep infinity"
     deploy:
       restart_policy:
         delay: 15s
