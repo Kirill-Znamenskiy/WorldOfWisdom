@@ -3,6 +3,7 @@ version: '3'
 output: prefixed
 
 env:
+  ENV: LOCAL
   BUILD_GIT_SHOW_VERSION:
     sh: git show --no-color --no-patch --decorate | head -n 1
 
@@ -22,7 +23,6 @@ tasks:
 
   docker-compose-up:
     docker-compose up 
-      --build 
       --remove-orphans 
       --abort-on-container-exit
 

@@ -31,10 +31,11 @@ services:
     environment:
       ENV: ${ENV:-UNKNOWN}
       CONFIG_FILE_PATH: "./config.yaml+./config.prod.yaml"
+      SERVER_ADDRESS: server:1234
     configs: [ { source: client-config.yaml, target: /wrkdir/config.yaml }]
     secrets: [ { source: client-config.prod.yaml, target: /wrkdir/config.prod.yaml }]
-    entrypoint: ""
-    command: "sleep infinity"
+#    entrypoint: ""
+#    command: "sleep infinity"
     deploy:
       restart_policy:
         delay: 15s

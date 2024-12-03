@@ -2,3 +2,4 @@ env: PROD
 log_level: INFO
 
 server_address: localhost:1234
+pow_max_attempts: 1000
