@@ -10,7 +10,8 @@ type Config struct {
 
 	BuildGitShowVersion string `mapstructure:"-" desc:"build app version in form of git show command"`
 
-	ServerAddress string `mapstructure:"server_address" validate:"required" desc:"server address"`
+	ServerAddress  string `mapstructure:"server_address" validate:"required" desc:"server address"`
+	POWMaxAttempts uint64 `mapstructure:"pow_max_attempts" validate:"required" desc:"pow max attempts"`
 }
 
 func (c *Config) IsDEV() bool   { return strings.ToUpper(c.ENV) == ENVDEV }

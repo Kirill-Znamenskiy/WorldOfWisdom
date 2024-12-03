@@ -52,6 +52,8 @@ services:
         BUILD_GIT_SHOW_VERSION: ${BUILD_GIT_SHOW_VERSION:-UNKNOWN}
     environment:
       ENV: ${ENV:-UNKNOWN}
+      SERVER___ADDRESS: 0.0.0.0:1234
+    ports: [ "127.0.0.1:1234:1234" ]
     configs: [ { source: server-config.yaml, target: /wrkdir/config.yaml }]
     secrets: [ { source: server-config.prod.yaml, target: /wrkdir/config.prod.yaml }]
     command: "./config.yaml+./config.prod.yaml"

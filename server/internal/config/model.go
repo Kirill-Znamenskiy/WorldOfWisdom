@@ -12,6 +12,9 @@ type Config struct {
 
 	Server struct {
 		Address string `mapstructure:"address" validate:"required" desc:"server address"`
+		POW     struct {
+			ZeroBitsCount uint8 `mapstructure:"zero_bits_count" validate:"required" desc:"number of zero bits"`
+		} `mapstructure:"pow" validate:"required"`
 	} `mapstructure:"server" validate:"required"`
 }
 

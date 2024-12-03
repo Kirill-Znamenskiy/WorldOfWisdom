@@ -8,6 +8,16 @@ env:
 
 tasks:
 
+  test: { deps: [ test-client, test-server ] }
+  test-server: [ { vars: { NM: 'server' }, task: test-any }]
+  test-client: [ { vars: { NM: 'client' }, task: test-any }]
+  test-any:
+    dir: './{{.NM}}'
+    prefix: '{{upper .NM}}'
+    cmds:
+      - go clean --testcache
+      - go test ./...
+
   start: [ { task: docker-compose-up } ]
 
   docker-compose-up:
@@ -26,22 +36,16 @@ tasks:
 
 
 
-  start-server-and-client:
-    deps: [ start-server, start-client ]
-  start-server:
-    dir: ./server
-    prefix: SERVER
+  start-server-and-client: { deps: [ start-client, start-server ] }
+  start-server: [ { vars: { NM: 'server' }, task: start-any }]
+  start-client: [ { vars: { NM: 'client' }, task: start-any }]
+
+  start-any:
+    dir: './{{.NM}}'
+    prefix: '{{upper .NM}}'
     cmds:
       - 'test -f ./configs/config.local.yaml || echo -e "env: LOCAL\nlog_level: INFO" > ./configs/config.local.yaml'
       - go run -ldflags "-s -w -X 'main.prvBuildGitShowVersion=${BUILD_GIT_SHOW_VERSION}'" ./cmd/main/*.go './configs/config.yaml+./configs/config.local.yaml'
-    interactive: false
-  start-client:
-    dir: ./client
-    prefix: CLIENT
-    cmds:
-      - 'test -f ./configs/config.local.yaml || echo -e "env: LOCAL\nlog_level: INFO" > ./configs/config.local.yaml'
-      - go run -ldflags "-s -w -X 'main.prvBuildGitShowVersion=${BUILD_GIT_SHOW_VERSION}'" ./cmd/main/*.go './configs/config.yaml+./configs/config.local.yaml'
-    interactive: true
 
   check-file:
     cmds:

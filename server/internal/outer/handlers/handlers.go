@@ -33,7 +33,7 @@ func New(pPOWManager POWManager, pWisdomManager WisdomManager) *Handlers {
 }
 
 func (hs *Handlers) HandleRequest(ctx Ctx, client string, req *proto.Request) (resp *proto.Response, err error) {
-	if req.Type == proto.RequestType_REQ_QUIT {
+	if req.Type == proto.Request_QUIT {
 		return nil, errors.New("close due to quit request")
 	}
 	resp = &proto.Response{}
@@ -44,21 +44,21 @@ func (hs *Handlers) HandleRequest(ctx Ctx, client string, req *proto.Request) (r
 
 	var ok bool
 	switch req.Type {
-	case proto.RequestType_WISDOM_REQUEST:
+	case proto.Request_WISDOM_REQUEST:
 		ok, err = hs.prvPOWManager.CheckPOW(ctx, req.Pow)
 		if err != nil {
 			return nil, err
 		}
 		if !ok {
-			resp.Type = proto.ResponseType_ERROR
+			resp.Type = proto.Response_ERROR
 			resp.Resp = &proto.Response_Error{
 				Error: &proto.Error{
-					Code:    101,
-					Message: "provide valid proof of work",
+					Code:    proto.Error_INVALID_POW,
+					Message: "invalid proof of work provided",
 				},
 			}
 		}
-		resp.Type = proto.ResponseType_WISDOM_RESPONSE
+		resp.Type = proto.Response_WISDOM_RESPONSE
 		lcGetWisdomResponse, err := hs.HandleWisdomRequest(ctx, req.GetWisdomRequest())
 		if err != nil {
 			return nil, err
@@ -67,10 +67,10 @@ func (hs *Handlers) HandleRequest(ctx Ctx, client string, req *proto.Request) (r
 			WisdomResponse: lcGetWisdomResponse,
 		}
 	default:
-		resp.Type = proto.ResponseType_ERROR
+		resp.Type = proto.Response_ERROR
 		resp.Resp = &proto.Response_Error{
 			Error: &proto.Error{
-				Code:    100,
+				Code:    proto.Error_UNKNOWN_REQUEST_TYPE,
 				Message: "unknown request unit type",
 			},
 		}

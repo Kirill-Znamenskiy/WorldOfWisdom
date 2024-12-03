@@ -3,5 +3,7 @@ log_level: INFO
 
 server:
   address: localhost:1234
+  pow:
+    zero_bits_count: 3
 
 

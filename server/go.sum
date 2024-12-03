@@ -4,6 +4,8 @@ github.com/Kirill-Znamenskiy/kzfunc v0.0.1 h1:89PZY7grZYj6I63DGGe2M+dSqX0FirlxxJ
 github.com/Kirill-Znamenskiy/kzfunc v0.0.1/go.mod h1:4QBN0xqn3OmpcHqNF7kREuOVjR1jeLsTU1dtf0fj01k=
 github.com/Kirill-Znamenskiy/kzlogger v0.0.3 h1:RSE+VB5KWRaWNBc8EiyRkAqTp+mAso24EHIAmz3I1co=
 github.com/Kirill-Znamenskiy/kzlogger v0.0.3/go.mod h1:+TXl4Nz+/GEou/TSSWwuZIf2qdK9Zg+sQJIlJLO9Hl8=
+github.com/Kirill-Znamenskiy/kztest v0.0.1 h1:ej5/sVwoGJBGuRkihEdgc1S6CCUHzYdUp4JIBTesyFg=
+github.com/Kirill-Znamenskiy/kztest v0.0.1/go.mod h1:r++JcV8qomxRQkXVvSsTRFm3iDKctvSlvM19Ad4dMwI=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc h1:U9qPSI2PIWSS1VwoXQT9A3Wy9MM3WgvqSxFWenqJduM=

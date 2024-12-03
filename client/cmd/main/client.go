@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/Kirill-Znamenskiy/WorldOfWisdom/server/pkg/hashcash"
 	"net"
 	"os"
 	"time"
@@ -55,21 +56,17 @@ func main() {
 		time.Sleep(5 * time.Second)
 		fmt.Printf("hello\n")
 
-		err = run(ctx, conn)
+		err = run(ctx, cfg, conn)
 		if err != nil {
 			lg.Error(ctx, "run", lga.Err(err))
 		}
 		// defer conn.Close()
 	}
-
-	_ = ctx
-	_ = prvBuildGitShowVersion
 }
 
-func run(ctx Ctx, conn net.Conn) (err error) {
+func run(ctx Ctx, cfg *config.Config, conn net.Conn) (err error) {
 	req := new(proto.Request)
-	req.Type = proto.RequestType_WISDOM_REQUEST
-	req.Pow = "asdf"
+	req.Type = proto.Request_WISDOM_REQUEST
 
 	err = proto.SendMessage(ctx, conn, req)
 	if err != nil {
@@ -82,8 +79,28 @@ func run(ctx Ctx, conn net.Conn) (err error) {
 		return err
 	}
 
-	if resp.Type == proto.ResponseType_WISDOM_RESPONSE {
+	if resp.Type == proto.Response_ERROR {
+		if resp.GetError().GetCode() == proto.Error_INVALID_POW {
+			hc, err := hashcash.Parse(resp.GetChallenge())
+			if err != nil {
+				return err
+			}
+			err = hc.Compute(cfg.POWMaxAttempts)
+			if err != nil {
+				return err
+			}
+
+			req := new(proto.Request)
+			req.Type = proto.Request_WISDOM_REQUEST
+		}
+	}
+
+	switch resp.Type {
+	case proto.Response_ERROR:
+	case proto.Response_WISDOM_RESPONSE:
 		fmt.Printf("WISDOM QUOTE: %s", resp.GetWisdomResponse().Quote)
+	default:
+		return lge.New("unknown response type", lga.Any("resp", resp))
 	}
 
 	return nil

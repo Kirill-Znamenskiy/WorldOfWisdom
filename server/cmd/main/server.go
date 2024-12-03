@@ -50,7 +50,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	lcPOWManager := mPOW.New()
+	lcPOWManager := mPOW.New(cfg.Server.POW.ZeroBitsCount)
 
 	lcRepo := repo.New(prvWisdomQuotes)
 

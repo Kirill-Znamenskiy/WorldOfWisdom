@@ -3,13 +3,13 @@ syntax = "proto3";
 option go_package = ".;proto";
 
 
-enum RequestType {
-  REQ_QUIT = 0;
-  WISDOM_REQUEST = 10;
-}
 
 message Request {
-  RequestType type = 1;
+  enum Type {
+    QUIT = 0;
+    WISDOM_REQUEST = 10;
+  }
+  Type type = 1;
   string pow = 2;
   oneof req {
     WisdomRequest wisdom_request = 3;
@@ -17,13 +17,13 @@ message Request {
 }
 
 
-enum ResponseType {
-  QUIT = 0;
-  ERROR = 10;
-  WISDOM_RESPONSE = 30;
-}
 message Response {
-  ResponseType type = 1;
+  enum Type {
+    QUIT = 0;
+    ERROR = 10;
+    WISDOM_RESPONSE = 30;
+  }
+  Type type = 1;
   string challenge = 2;
   oneof resp {
     Error error = 3;
@@ -31,8 +31,15 @@ message Response {
   }
 }
 
+
 message Error {
-  int32 code = 1;
+  enum Code {
+    UNKNOWN = 0;
+    UNKNOWN_REQUEST_TYPE = 10;
+    UNKNOWN_RESPONSE_TYPE = 20;
+    INVALID_POW = 30;
+  }
+  Code code = 1;
   string message = 2;
 }
 
