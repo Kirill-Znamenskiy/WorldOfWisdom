@@ -19,12 +19,12 @@ func TestPOWManager_CheckPOW(t *testing.T) {
 	for i := 0; i < 3; i++ {
 		fmt.Printf("\n\n\n")
 		hc, _ := hashcash.New(1, "asdfa")
-		fmt.Printf("before-hc: %s\n", hc.String())
+		fmt.Printf("before-newhc: %s\n", hc.String())
 		hc.Compute(1)
-		fmt.Printf("after-hc: %s\n", hc.String())
+		fmt.Printf("after-newhc: %s\n", hc.String())
 	}
 
-	hc := func(bits int) *hashcash.Hashcash {
+	newhc := func(bits int) *hashcash.Hashcash {
 		resource := make([]byte, 5)
 		_, err := rand.Read(resource)
 		require.NoError(t, err)
@@ -34,6 +34,6 @@ func TestPOWManager_CheckPOW(t *testing.T) {
 	}
 
 	kztest.RunTests(t, lcPOWManager.CheckPOW, []kztest.TestKit{
-		{Arg1: ctx, Arg2: hc(3).String(), Result1: false, Result2: assert.NoError},
+		{Arg1: ctx, Arg2: newhc(3).String(), Result1: false, Result2: assert.NoError},
 	})
 }

@@ -132,7 +132,7 @@ func IsCorrect(hc string, bits int) bool {
 		return false
 	}
 
-	hash := CalcHash(hc)
+	hash := CalcHashSum(hc)
 	if bits > len(hash) {
 		return false
 	}
@@ -146,6 +146,9 @@ func IsCorrect(hc string, bits int) bool {
 	return true
 }
 
-func CalcHash[T string | []byte](data T) []byte {
-	return hex.AppendEncode(nil, sha1.New().Sum([]byte(data)))
+func CalcHashSum[T string | []byte](data T) (ret []byte) {
+	hash := sha1.Sum([]byte(data))
+	ret = make([]byte, hex.EncodedLen(len(hash)))
+	hex.Encode(ret, hash[:])
+	return ret
 }
