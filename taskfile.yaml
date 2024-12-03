@@ -1,12 +1,18 @@
 version: '3'
 
+output: prefixed
+
+env:
+  BUILD_GIT_SHOW_VERSION:
+    sh: git show --no-color --no-patch --decorate | head -n 1
 
 tasks:
+
+  start: [ { task: docker-compose-up } ]
 
   docker-compose-up:
     docker-compose up 
       --build 
-      --pull=always 
       --remove-orphans 
       --abort-on-container-exit
 
@@ -14,21 +20,28 @@ tasks:
     docker-compose up 
       --build 
       --pull=always 
-      --remove-orphans 
-      --force-recreate 
+      --force-recreate
+      --remove-orphans
       --abort-on-container-exit
 
 
-  start-client: [ { vars: { WRK_DIR_PATH: ./client }, task: start-anything } ]
-  start-server: [ { vars: { WRK_DIR_PATH: ./server }, task: start-anything } ]
-  start-anything:
-    dir: '{{.WRK_DIR_PATH}}'
-    vars:
-      LOCAL_CONFIG_FILE_PATH: ./configs/config.local.yaml
-    interactive: true
+
+  start-server-and-client:
+    deps: [ start-server, start-client ]
+  start-server:
+    dir: ./server
+    prefix: SERVER
     cmds:
-      - 'test -f {{.LOCAL_CONFIG_FILE_PATH}} || echo -e "env: LOCAL\nlog_level: INFO" > {{.LOCAL_CONFIG_FILE_PATH}}'
-      - go run ./cmd/main/*.go
+      - 'test -f ./configs/config.local.yaml || echo -e "env: LOCAL\nlog_level: INFO" > ./configs/config.local.yaml'
+      - go run -ldflags "-s -w -X 'main.prvBuildGitShowVersion=${BUILD_GIT_SHOW_VERSION}'" ./cmd/main/*.go './configs/config.yaml+./configs/config.local.yaml'
+    interactive: false
+  start-client:
+    dir: ./client
+    prefix: CLIENT
+    cmds:
+      - 'test -f ./configs/config.local.yaml || echo -e "env: LOCAL\nlog_level: INFO" > ./configs/config.local.yaml'
+      - go run -ldflags "-s -w -X 'main.prvBuildGitShowVersion=${BUILD_GIT_SHOW_VERSION}'" ./cmd/main/*.go './configs/config.yaml+./configs/config.local.yaml'
+    interactive: true
 
   check-file:
     cmds:
@@ -96,8 +109,7 @@ tasks:
     ignore_error: true
 
 vars:
-  BUILD_GIT_SHOW_VERSION:
-    sh: git show --no-color --no-patch --decorate | head -n 1
+
   FILE_PATH: '{{.FILE_PATH}}'
   CLIENT_ROOT_DIR_PATH: { sh: "realpath './client'" }
   SERVER_ROOT_DIR_PATH: { sh: "realpath './server'" }

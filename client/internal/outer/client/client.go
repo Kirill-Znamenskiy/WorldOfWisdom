@@ -3,14 +3,16 @@ package client
 import (
 	"context"
 	"encoding/binary"
+	"io"
+	"net"
+	"unsafe"
+
+	protobuf "google.golang.org/protobuf/proto"
+
 	"github.com/Kirill-Znamenskiy/WorldOfWisdom/server/pkg/proto"
 	"github.com/Kirill-Znamenskiy/kzlogger/lg"
 	"github.com/Kirill-Znamenskiy/kzlogger/lga"
 	"github.com/Kirill-Znamenskiy/kzlogger/lge"
-	protobuf "google.golang.org/protobuf/proto"
-	"io"
-	"net"
-	"unsafe"
 )
 
 type Ctx = context.Context
@@ -74,7 +76,7 @@ func (s *Server) HandleConnection(ctx Ctx, conn net.Conn) (err error) {
 		req := new(proto.Request)
 		err = protobuf.Unmarshal(bs, req)
 		if err != nil {
-			//return err
+			// return err
 		}
 		lg.Debug(ctx, "req", lga.Any("req", req))
 

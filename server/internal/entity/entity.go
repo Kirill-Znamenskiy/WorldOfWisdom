@@ -1,7 +1,9 @@
 package entity
 
-type WisdomNN uint32
-type WisdomQuote string
+type (
+	WisdomNN    uint32
+	WisdomQuote string
+)
 
 type Wisdom struct {
 	NN    WisdomNN

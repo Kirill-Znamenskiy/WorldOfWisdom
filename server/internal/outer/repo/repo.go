@@ -3,6 +3,7 @@ package repo
 import (
 	"context"
 	"errors"
+
 	"github.com/Kirill-Znamenskiy/WorldOfWisdom/server/internal/entity"
 )
 

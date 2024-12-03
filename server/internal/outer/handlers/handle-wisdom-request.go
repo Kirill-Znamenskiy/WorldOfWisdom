@@ -5,7 +5,6 @@ import (
 )
 
 func (hs *Handlers) HandleWisdomRequest(ctx Ctx, req *proto.WisdomRequest) (resp *proto.WisdomResponse, err error) {
-
 	wq, err := hs.prvWisdomManager.GetRandomWisdomQuote(ctx)
 	if err != nil {
 		return nil, err

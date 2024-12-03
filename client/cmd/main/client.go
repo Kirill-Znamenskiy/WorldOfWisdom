@@ -48,6 +48,7 @@ func main() {
 	conn, err := net.Dial("tcp", cfg.ServerAddress)
 	if err != nil {
 		lg.Error(ctx, "net.Dial", lga.Err(err))
+		os.Exit(1)
 	}
 
 	for {

@@ -8,6 +8,7 @@ func IsIn[T comparable](value T, okValues []T) bool {
 	}
 	return false
 }
+
 func IsOneOf[T comparable](value T, okValues ...T) bool {
 	return IsIn(value, okValues)
 }

@@ -2,11 +2,6 @@ package main
 
 import (
 	"context"
-	mPOW "github.com/Kirill-Znamenskiy/WorldOfWisdom/server/internal/inner/managers/pow-manager"
-	mWisdom "github.com/Kirill-Znamenskiy/WorldOfWisdom/server/internal/inner/managers/wisdom-manager"
-	"github.com/Kirill-Znamenskiy/WorldOfWisdom/server/internal/outer/handlers"
-	"github.com/Kirill-Znamenskiy/WorldOfWisdom/server/internal/outer/repo"
-	"github.com/Kirill-Znamenskiy/WorldOfWisdom/server/internal/outer/server"
 	"math/rand"
 	"os"
 	"os/signal"
@@ -18,6 +13,11 @@ import (
 	"github.com/Kirill-Znamenskiy/kzlogger/lge"
 
 	"github.com/Kirill-Znamenskiy/WorldOfWisdom/server/internal/config"
+	mPOW "github.com/Kirill-Znamenskiy/WorldOfWisdom/server/internal/inner/managers/pow-manager"
+	mWisdom "github.com/Kirill-Znamenskiy/WorldOfWisdom/server/internal/inner/managers/wisdom-manager"
+	"github.com/Kirill-Znamenskiy/WorldOfWisdom/server/internal/outer/handlers"
+	"github.com/Kirill-Znamenskiy/WorldOfWisdom/server/internal/outer/repo"
+	"github.com/Kirill-Znamenskiy/WorldOfWisdom/server/internal/outer/server"
 )
 
 type Ctx = context.Context
