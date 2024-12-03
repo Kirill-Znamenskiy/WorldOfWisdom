@@ -46,6 +46,8 @@ func main() {
 		os.Exit(1)
 	}
 
+	time.Sleep(5 * time.Second)
+
 	conn, err := net.Dial("tcp", cfg.ServerAddress)
 	if err != nil {
 		lg.Error(ctx, "net.Dial", lga.Err(err))
@@ -54,7 +56,6 @@ func main() {
 
 	for {
 		time.Sleep(5 * time.Second)
-		fmt.Printf("hello\n")
 
 		err = run(ctx, cfg, conn)
 		if err != nil {
