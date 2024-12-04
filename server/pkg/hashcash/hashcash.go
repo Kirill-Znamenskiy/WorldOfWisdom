@@ -86,6 +86,9 @@ func (hc *Hashcash) GetBits() uint8 {
 func (hc *Hashcash) GetDate() time.Time {
 	return hc.date
 }
+func (hc *Hashcash) GetCounter() uint64 {
+	return hc.counter
+}
 
 func (hc *Hashcash) String() string {
 	cbs := []byte(strconv.FormatUint(hc.counter, 10))
