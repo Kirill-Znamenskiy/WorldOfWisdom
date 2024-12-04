@@ -27,8 +27,8 @@ tasks:
     - docker-compose up 
         --build
         --remove-orphans
-        --detach
-#        --abort-on-container-exit
+#        --detach
+        --abort-on-container-exit
 
   docker-compose-up--force-recreate:
     docker-compose up 
@@ -36,8 +36,8 @@ tasks:
       --pull=always 
       --force-recreate
       --remove-orphans
-      --detach
-#      --abort-on-container-exit
+#      --detach
+      --abort-on-container-exit
 
 
 
