@@ -6,16 +6,13 @@ configs:
   server-config.yaml:
     file: ./server/configs/config.yaml
 secrets:
-  client-config.prod.yaml:
-    file: ./client/configs/config.prod.yaml
-  server-config.prod.yaml:
-    file: ./server/configs/config.prod.yaml
+  client-config.dcompose.yaml:
+    file: ./client/configs/config.dcompose.yaml
+  server-config.dcompose.yaml:
+    file: ./server/configs/config.dcompose.yaml
 
 
 services:
-#  alpine:
-#    image: alpine
-#    command: sleep infinity
 
   server:
     build:
@@ -26,12 +23,14 @@ services:
         BUILD_ENV: ${BUILD_ENV:-UNKNOWN}
         BUILD_GIT_SHOW_VERSION: ${BUILD_GIT_SHOW_VERSION:-UNKNOWN}
     environment:
-      ENV: ${ENV:-UNKNOWN}
+      ENV: ${ENV:-PROD}
+      LOG_LEVE: INFO
       SERVER___ADDRESS: 0.0.0.0:1234
+      SERVER___POW__ZERO_BITS_COUNT: 5
     ports: [ "127.0.0.1:1234:1234" ]
     configs: [ { source: server-config.yaml, target: /wrkdir/config.yaml }]
-    secrets: [ { source: server-config.prod.yaml, target: /wrkdir/config.prod.yaml }]
-    command: "./config.yaml+./config.prod.yaml"
+    secrets: [ { source: server-config.dcompose.yaml, target: /wrkdir/config.dcompose.yaml }]
+    command: "./config.yaml+./config.dcompose.yaml"
 
   client:
     build:
@@ -45,10 +44,11 @@ services:
         BUILD_GIT_SHOW_VERSION: ${BUILD_GIT_SHOW_VERSION:-UNKNOWN}
     environment:
       ENV: ${ENV:-UNKNOWN}
-      CONFIG_FILE_PATH: "./config.yaml+./config.prod.yaml"
+      LOG_LEVEL: INFO
       SERVER_ADDRESS: server:1234
+      CONFIG_FILE_PATH: "./config.yaml+./config.dcompose.yaml"
     configs: [ { source: client-config.yaml, target: /wrkdir/config.yaml }]
-    secrets: [ { source: client-config.prod.yaml, target: /wrkdir/config.prod.yaml }]
+    secrets: [ { source: client-config.dcompose.yaml, target: /wrkdir/config.dcompose.yaml }]
     depends_on:
       server:
         condition: service_started

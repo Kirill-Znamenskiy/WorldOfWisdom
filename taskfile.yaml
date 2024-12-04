@@ -22,10 +22,12 @@ tasks:
   start: [ { task: docker-compose-up } ]
 
   docker-compose-up:
-    docker-compose up 
-      --build
-      --remove-orphans 
-      --abort-on-container-exit
+    - 'test -f ./server/configs/config.dcompose.yaml || echo -e "env: DCOMPOSE\nlog_level: INFO" > ./server/configs/config.dcompose.yaml'
+    - 'test -f ./client/configs/config.dcompose.yaml || echo -e "env: DCOMPOSE\nlog_level: INFO" > ./client/configs/config.dcompose.yaml'
+    - docker-compose up 
+        --build
+        --remove-orphans 
+        --abort-on-container-exit
 
   docker-compose-up--force-recreate:
     docker-compose up 
