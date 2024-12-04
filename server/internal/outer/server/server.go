@@ -27,7 +27,7 @@ type Handler interface {
 }
 
 type Server struct {
-	lgr     *lg.Logger
+	lgr     lg.LoggerInterface
 	Addr    string
 	Handler Handler
 
@@ -35,8 +35,9 @@ type Server struct {
 	wrkCtxCancelF context.CancelFunc
 }
 
-func New(addr string, handler Handler) *Server {
+func New(logger lg.LoggerInterface, addr string, handler Handler) *Server {
 	return &Server{
+		lgr:     logger,
 		Addr:    addr,
 		Handler: handler,
 	}
@@ -72,6 +73,7 @@ func (s *Server) ListenAndHandle(ctx Ctx) (err error) {
 
 			continue
 		}
+		s.lgr.Info(ctx, "start handle connection", lga.String("conn", conn.LocalAddr().String()+"<=>"+conn.RemoteAddr().String()))
 		go s.HandleConnection(s.wrkCtx, conn)
 	}
 }
@@ -161,6 +163,7 @@ func NewUnexpectedServerErrorResponse() (ret *proto.Response) {
 }
 
 func (s *Server) closeConnection(ctx Ctx, conn net.Conn) {
+	s.lgr.Info(ctx, "close connection", lga.String("conn", conn.LocalAddr().String()+"<=>"+conn.RemoteAddr().String()))
 	err := conn.SetDeadline(time.Now())
 	if err != nil {
 		s.lgr.Error(ctx, "conn.SetDeadline(time.Now()) error", lga.Err(err))

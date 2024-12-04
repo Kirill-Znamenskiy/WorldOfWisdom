@@ -57,6 +57,7 @@ func (hs *Handlers) HandleRequest(ctx Ctx, client string, req *proto.Request) (r
 					Message: "invalid proof of work provided",
 				},
 			}
+			return resp, nil
 		}
 		resp.Type = proto.Response_WISDOM_RESPONSE
 		lcGetWisdomResponse, err := hs.HandleWisdomRequest(ctx, req.GetWisdomRequest())

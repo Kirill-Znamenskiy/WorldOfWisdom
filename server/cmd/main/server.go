@@ -60,7 +60,7 @@ func main() {
 
 	lcHandlers := handlers.New(lcPOWManager, lcWisdomManager)
 
-	lcServerInst := server.New(cfg.Server.Address, lcHandlers)
+	lcServerInst := server.New(lg.Default().CloneWithName("tcp-server"), cfg.Server.Address, lcHandlers)
 
 	finishedCh := make(chan error, 3)
 

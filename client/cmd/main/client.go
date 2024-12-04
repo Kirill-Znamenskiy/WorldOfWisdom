@@ -55,13 +55,13 @@ func main() {
 	}
 
 	for {
-		time.Sleep(5 * time.Second)
-
 		err = run(ctx, cfg, conn)
 		if err != nil {
 			lg.Error(ctx, "run", lga.Err(err))
 		}
 		// defer conn.Close()
+
+		time.Sleep(5 * time.Second)
 	}
 }
 
@@ -69,13 +69,13 @@ func run(ctx Ctx, cfg *config.Config, conn net.Conn) (err error) {
 	req := new(proto.Request)
 	req.Type = proto.Request_WISDOM_REQUEST
 
-	err = proto.SendMessage(ctx, conn, req)
+	err = proto.SendMessage(conn, req)
 	if err != nil {
 		return err
 	}
 
 	resp := new(proto.Response)
-	err = proto.ReadMessage(ctx, conn, resp)
+	err = proto.ReadMessage(conn, resp)
 	if err != nil {
 		return err
 	}
