@@ -26,8 +26,9 @@ tasks:
     - 'test -f ./client/configs/config.dcompose.yaml || echo -e "env: DCOMPOSE\nlog_level: INFO" > ./client/configs/config.dcompose.yaml'
     - docker-compose up 
         --build
-        --remove-orphans 
-        --abort-on-container-exit
+        --remove-orphans
+        --detach
+#        --abort-on-container-exit
 
   docker-compose-up--force-recreate:
     docker-compose up 
@@ -35,7 +36,8 @@ tasks:
       --pull=always 
       --force-recreate
       --remove-orphans
-      --abort-on-container-exit
+      --detach
+#      --abort-on-container-exit
 
 
 

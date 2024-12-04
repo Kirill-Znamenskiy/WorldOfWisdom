@@ -66,7 +66,11 @@ func main() {
 }
 
 func run(ctx Ctx, cfg *config.Config, conn net.Conn) (err error) {
-	req := new(proto.Request)
+	var (
+		req  *proto.Request
+		resp *proto.Response
+	)
+	req = new(proto.Request)
 	req.Type = proto.Request_WISDOM_REQUEST
 
 	lg.Debug(ctx, "BFR send req with empty pow", lga.Any("req", req))
@@ -76,7 +80,7 @@ func run(ctx Ctx, cfg *config.Config, conn net.Conn) (err error) {
 	}
 	lg.Debug(ctx, "AFTER send req with empty pow", lga.Any("req", req))
 
-	resp := new(proto.Response)
+	resp = new(proto.Response)
 	lg.Debug(ctx, "BFR read resp to req with empty pow", lga.Any("req", req), lga.Any("resp", resp))
 	err = proto.ReadMessage(conn, resp)
 	if err != nil {
@@ -91,28 +95,25 @@ func run(ctx Ctx, cfg *config.Config, conn net.Conn) (err error) {
 			if err != nil {
 				return err
 			}
-			lg.Info(ctx, "Start compute challenge",
+			lg.Debug(ctx, "Start compute challenge",
 				lga.Any("hc", hc),
-				lga.Any("resp", resp),
 				lga.Uint64("cfg.POWMaxAttempts", cfg.POWMaxAttempts),
 			)
 			startAt := time.Now()
 			err = hc.Compute(cfg.POWMaxAttempts)
 			finishedAt := time.Now()
 			duration := finishedAt.Sub(startAt)
-			lg.Info(ctx, "Finish compute challenge",
+			lg.Info(ctx, "PoW challenge successfully computed!",
 				lga.Any("hc", hc),
 				lga.Any("hc.GetCounter()", hc.GetCounter()),
-				lga.Any("resp", resp),
-				lga.Uint64("cfg.POWMaxAttempts", cfg.POWMaxAttempts),
-				lga.Err(err),
 				lga.Duration("duration", duration),
+				lga.Err(err),
 			)
 			if err != nil {
 				return err
 			}
 
-			req := new(proto.Request)
+			req = new(proto.Request)
 			req.Type = proto.Request_WISDOM_REQUEST
 			req.Pow = hc.String()
 
@@ -123,7 +124,7 @@ func run(ctx Ctx, cfg *config.Config, conn net.Conn) (err error) {
 			}
 			lg.Debug(ctx, "AFTER send req with computed pow", lga.Any("req", req))
 
-			resp := new(proto.Response)
+			resp = new(proto.Response)
 			lg.Debug(ctx, "BFR read resp to req with computed pow", lga.Any("req", req), lga.Any("resp", resp))
 			err = proto.ReadMessage(conn, resp)
 			if err != nil {
