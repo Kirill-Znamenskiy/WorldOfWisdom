@@ -46,7 +46,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	time.Sleep(5 * time.Second)
+	time.Sleep(time.Second)
 
 	conn, err := net.Dial("tcp", cfg.ServerAddress)
 	if err != nil {

@@ -35,9 +35,9 @@ message Response {
 message Error {
   enum Code {
     UNKNOWN = 0;
-    UNKNOWN_REQUEST_TYPE = 10;
-    UNKNOWN_RESPONSE_TYPE = 20;
-    INVALID_POW = 30;
+    INVALID_POW = 10;
+    UNKNOWN_REQUEST_TYPE = 20;
+    UNEXPECTED_INTERNAL_ERROR = 30;
   }
   Code code = 1;
   string message = 2;

@@ -77,10 +77,7 @@ func main() {
 		lg.Info(ctx, "TCP Server: now graceful stop")
 		bgCtx, bgCtxCancelF := context.WithTimeout(context.Background(), timeout)
 		defer bgCtxCancelF()
-		err = lcServerInst.Close(bgCtx)
-		if err != nil {
-			lg.Error(bgCtx, lge.WrapWithCaller(err))
-		}
+		lcServerInst.Close(bgCtx)
 	}
 
 	forKillSignalsCh := make(chan os.Signal, 1)
