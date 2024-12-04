@@ -69,6 +69,7 @@ func run(ctx Ctx, cfg *config.Config, conn net.Conn) (err error) {
 	req := new(proto.Request)
 	req.Type = proto.Request_WISDOM_REQUEST
 
+	lg.Info(ctx, "send req with empty pow", lga.Any("req", req))
 	err = proto.SendMessage(conn, req)
 	if err != nil {
 		return err

@@ -46,6 +46,7 @@ services:
       ENV: ${ENV:-UNKNOWN}
       LOG_LEVEL: INFO
       SERVER_ADDRESS: server:1234
+      POW_MAX_ATTEMPTS: 0
     configs: [ { source: client-config.yaml, target: /wrkdir/config.yaml }]
     secrets: [ { source: client-config.secret.yaml, target: /wrkdir/config.secret.yaml }]
     command: "./config.yaml+./config.secret.yaml"
