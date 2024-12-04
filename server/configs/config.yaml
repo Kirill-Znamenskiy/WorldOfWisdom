@@ -1,4 +1,4 @@
-env: PROD
+env: -SHOULD-BE-OVERRIDEN-
 log_level: INFO
 
 server:

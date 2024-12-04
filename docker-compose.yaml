@@ -6,9 +6,9 @@ configs:
   server-config.yaml:
     file: ./server/configs/config.yaml
 secrets:
-  client-config.dcompose.yaml:
+  client-config.secret.yaml:
     file: ./client/configs/config.dcompose.yaml
-  server-config.dcompose.yaml:
+  server-config.secret.yaml:
     file: ./server/configs/config.dcompose.yaml
 
 
@@ -29,8 +29,8 @@ services:
       SERVER___POW__ZERO_BITS_COUNT: 5
     ports: [ "127.0.0.1:1234:1234" ]
     configs: [ { source: server-config.yaml, target: /wrkdir/config.yaml }]
-    secrets: [ { source: server-config.dcompose.yaml, target: /wrkdir/config.dcompose.yaml }]
-    command: "./config.yaml+./config.dcompose.yaml"
+    secrets: [ { source: server-config.secret.yaml, target: /wrkdir/config.secret.yaml }]
+    command: "./config.yaml+./config.secret.yaml"
 
   client:
     build:
@@ -46,9 +46,9 @@ services:
       ENV: ${ENV:-UNKNOWN}
       LOG_LEVEL: INFO
       SERVER_ADDRESS: server:1234
-      CONFIG_FILE_PATH: "./config.yaml+./config.dcompose.yaml"
     configs: [ { source: client-config.yaml, target: /wrkdir/config.yaml }]
-    secrets: [ { source: client-config.dcompose.yaml, target: /wrkdir/config.dcompose.yaml }]
+    secrets: [ { source: client-config.secret.yaml, target: /wrkdir/config.secret.yaml }]
+    command: "./config.yaml+./config.secret.yaml"
     depends_on:
       server:
         condition: service_started
