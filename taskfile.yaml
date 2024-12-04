@@ -23,6 +23,7 @@ tasks:
 
   docker-compose-up:
     docker-compose up 
+      --build
       --remove-orphans 
       --abort-on-container-exit
 

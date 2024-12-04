@@ -13,35 +13,9 @@ secrets:
 
 
 services:
-  alpine:
-    image: alpine
-    command: sleep infinity
-
-  client:
-    build:
-      pull: true
-      no_cache: true
-      target: main
-      context: ./client
-      additional_contexts:
-        server: ./server
-      args:
-        BUILD_ENV: ${BUILD_ENV:-UNKNOWN}
-        BUILD_GIT_SHOW_VERSION: ${BUILD_GIT_SHOW_VERSION:-UNKNOWN}
-    environment:
-      ENV: ${ENV:-UNKNOWN}
-      CONFIG_FILE_PATH: "./config.yaml+./config.prod.yaml"
-      SERVER_ADDRESS: server:1234
-    configs: [ { source: client-config.yaml, target: /wrkdir/config.yaml }]
-    secrets: [ { source: client-config.prod.yaml, target: /wrkdir/config.prod.yaml }]
-#    entrypoint: ""
-#    command: "sleep infinity"
-    deploy:
-      restart_policy:
-        delay: 15s
-        window: 15s
-        max_attempts: 3
-        condition: on-failure
+#  alpine:
+#    image: alpine
+#    command: sleep infinity
 
   server:
     build:
@@ -58,12 +32,27 @@ services:
     configs: [ { source: server-config.yaml, target: /wrkdir/config.yaml }]
     secrets: [ { source: server-config.prod.yaml, target: /wrkdir/config.prod.yaml }]
     command: "./config.yaml+./config.prod.yaml"
-    deploy:
-      restart_policy:
-        delay: 15s
-        window: 15s
-        max_attempts: 3
-        condition: on-failure
+
+  client:
+    build:
+      pull: true
+      target: main
+      context: ./client
+      additional_contexts:
+        server: ./server
+      args:
+        BUILD_ENV: ${BUILD_ENV:-UNKNOWN}
+        BUILD_GIT_SHOW_VERSION: ${BUILD_GIT_SHOW_VERSION:-UNKNOWN}
+    environment:
+      ENV: ${ENV:-UNKNOWN}
+      CONFIG_FILE_PATH: "./config.yaml+./config.prod.yaml"
+      SERVER_ADDRESS: server:1234
+    configs: [ { source: client-config.yaml, target: /wrkdir/config.yaml }]
+    secrets: [ { source: client-config.prod.yaml, target: /wrkdir/config.prod.yaml }]
+    depends_on:
+      server:
+        condition: service_started
+
 
 networks:
   default:
