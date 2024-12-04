@@ -1,7 +1,6 @@
 package proto
 
 import (
-	"context"
 	"encoding/binary"
 	"io"
 	"unsafe"
@@ -11,9 +10,7 @@ import (
 	"github.com/Kirill-Znamenskiy/kzlogger/lge"
 )
 
-type Ctx = context.Context
-
-func ReadMessage(ctx Ctx, reader io.Reader, target protobuf.Message) (err error) {
+func ReadMessage(reader io.Reader, target protobuf.Message) (err error) {
 	var size uint32
 	bs := make([]byte, unsafe.Sizeof(size))
 	_, err = io.ReadFull(reader, bs)
@@ -36,7 +33,7 @@ func ReadMessage(ctx Ctx, reader io.Reader, target protobuf.Message) (err error)
 	return nil
 }
 
-func SendMessage(ctx Ctx, writer io.Writer, message protobuf.Message) error {
+func SendMessage(writer io.Writer, message protobuf.Message) error {
 	messageBs, err := protobuf.Marshal(message)
 	if err != nil {
 		return err

@@ -3,20 +3,24 @@ package server
 import (
 	"context"
 	"errors"
-	"net"
-
+	"github.com/Kirill-Znamenskiy/WorldOfWisdom/server/pkg/proto"
 	"github.com/Kirill-Znamenskiy/kzlogger/lg"
 	"github.com/Kirill-Znamenskiy/kzlogger/lga"
 	"github.com/Kirill-Znamenskiy/kzlogger/lge"
-
-	"github.com/Kirill-Znamenskiy/WorldOfWisdom/server/pkg/proto"
+	"github.com/sourcegraph/conc/panics"
+	"io"
+	"net"
+	"time"
 )
 
 var ErrCloseConnection = errors.New("close connection")
 
 type Ctx = context.Context
 
-const MessageSizeBytesLength = 4
+const (
+	MessageSizeBytesLength  = 4
+	SendMessageRetriesCount = 3
+)
 
 type Handler interface {
 	HandleRequest(Ctx, string, *proto.Request) (*proto.Response, error)
@@ -26,8 +30,6 @@ type Server struct {
 	lgr     *lg.Logger
 	Addr    string
 	Handler Handler
-
-	listener net.Listener
 
 	wrkCtx        context.Context
 	wrkCtxCancelF context.CancelFunc
@@ -43,16 +45,25 @@ func New(addr string, handler Handler) *Server {
 func (s *Server) ListenAndHandle(ctx Ctx) (err error) {
 	s.wrkCtx, s.wrkCtxCancelF = context.WithCancel(ctx)
 
-	s.listener, err = net.Listen("tcp", s.Addr)
+	listener, err := net.Listen("tcp", s.Addr)
 	if err != nil {
 		return lge.WrapErrWithCaller(err)
 	}
 
+	go func() {
+		select {
+		case <-ctx.Done():
+			err := listener.Close()
+			if err != nil {
+				s.lgr.Error(ctx, "listener.Close() error", lga.Err(err))
+			}
+		}
+	}()
+
 	for {
-		conn, err := s.listener.Accept()
+		conn, err := listener.Accept()
 		if err != nil {
 			s.lgr.Error(ctx, "listener.Accept() error", lga.Err(err))
-
 			sWrkCtxErr := s.wrkCtx.Err()
 			if sWrkCtxErr != nil { // it means context is finished
 				s.lgr.Error(ctx, "sWrkCtxErr non nil", lga.Any("sWrkCtxErr", sWrkCtxErr))
@@ -66,12 +77,13 @@ func (s *Server) ListenAndHandle(ctx Ctx) (err error) {
 }
 
 func (s *Server) HandleConnection(ctx Ctx, conn net.Conn) {
-	defer func() {
-		connCloseErr := conn.Close()
-		if connCloseErr != nil {
-			s.lgr.Error(ctx, "conn.Close() error", lga.Any("connCloseErr", connCloseErr))
+	go func() {
+		select {
+		case <-ctx.Done():
+			s.closeConnection(ctx, conn)
 		}
 	}()
+	defer s.closeConnection(ctx, conn)
 	var (
 		err  error
 		req  *proto.Request
@@ -79,9 +91,12 @@ func (s *Server) HandleConnection(ctx Ctx, conn net.Conn) {
 	)
 	for {
 		req = new(proto.Request)
-		err = proto.ReadMessage(ctx, conn, req)
+		err = proto.ReadMessage(conn, req)
 		if err != nil {
-			s.lgr.Error(ctx, lge.WrapWithCaller(err), lga.Any("req", req), lga.Err(err))
+			s.lgr.Error(ctx, "proto.ReadMessage error", lga.Err(err), lga.Any("req", req))
+			if errors.Is(err, io.EOF) || s.wrkCtx.Err() != nil {
+				return
+			}
 			req = nil
 		}
 
@@ -91,13 +106,19 @@ func (s *Server) HandleConnection(ctx Ctx, conn net.Conn) {
 			s.lgr.Error(ctx, "nil request leads to error response", lga.Any("req", req), lga.Any("resp", resp), lga.Err(err))
 			resp = NewUnexpectedServerErrorResponse()
 		} else {
-			resp, err = s.Handler.HandleRequest(ctx, conn.RemoteAddr().String(), req)
+			recoveredPanic := panics.Try(func() {
+				resp, err = s.Handler.HandleRequest(ctx, conn.RemoteAddr().String(), req)
+			})
+			if recoveredPanic != nil {
+				s.lgr.Error(ctx, " s.Handler.HandleRequest panic", lga.Any("panic", recoveredPanic.AsError()), lga.Any("resp", resp), lga.Err(err))
+				err = nil
+				resp = NewUnexpectedServerErrorResponse()
+			}
 			if err != nil {
+				s.lgr.Error(ctx, " s.Handler.HandleRequest error", lga.Any("req", resp), lga.Any("resp", resp), lga.Err(err))
 				if errors.Is(err, ErrCloseConnection) {
-					// defer conn.Close() close the connection
 					return
 				}
-				s.lgr.Error(ctx, "s.HandleRequest error", lga.Any("req", resp), lga.Any("resp", resp), lga.Err(err))
 				resp = NewUnexpectedServerErrorResponse()
 			}
 			if resp == nil {
@@ -108,10 +129,13 @@ func (s *Server) HandleConnection(ctx Ctx, conn net.Conn) {
 
 		lg.Debug(ctx, "resp", lga.Any("resp", resp))
 
-		for retry := 0; retry < 3; retry++ {
-			err = proto.SendMessage(ctx, conn, resp)
+		for retry := 0; retry < SendMessageRetriesCount; retry++ {
+			err = proto.SendMessage(conn, resp)
 			if err != nil {
 				s.lgr.Error(ctx, "proto.SendMessage err", lga.Any("retry", retry), lga.Any("req", req), lga.Any("resp", resp), lga.Err(err))
+				if errors.Is(err, io.EOF) || s.wrkCtx.Err() != nil {
+					return
+				}
 				continue
 			}
 			break
@@ -121,12 +145,6 @@ func (s *Server) HandleConnection(ctx Ctx, conn net.Conn) {
 
 func (s *Server) Close(ctx Ctx) {
 	s.wrkCtxCancelF()
-
-	err := s.listener.Close()
-	if err != nil {
-		s.lgr.Error(ctx, "listener.Close() error", lga.Err(err))
-	}
-
 	return
 }
 
@@ -140,4 +158,15 @@ func NewUnexpectedServerErrorResponse() (ret *proto.Response) {
 		},
 	}
 	return ret
+}
+
+func (s *Server) closeConnection(ctx Ctx, conn net.Conn) {
+	err := conn.SetDeadline(time.Now())
+	if err != nil {
+		s.lgr.Error(ctx, "conn.SetDeadline(time.Now()) error", lga.Err(err))
+	}
+	err = conn.Close()
+	if err != nil {
+		s.lgr.Error(ctx, "conn.Close() error", lga.Err(err))
+	}
 }
